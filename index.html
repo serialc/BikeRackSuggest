@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Suggest bike rack locations in Luxembourg City</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.2/leaflet.css" />
+		<link rel="stylesheet" href="css/brs.css" />
+		<!--[if lte IE 8]>
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.2/leaflet.ie.css" />
+		<![endif]-->
+	</head>
+	<body>
+		<div id='head'>Suggest bike rack locations in Luxembourg City</div>
+		<div id='cont'>
+			<div id="map"></div>
+		</div>
+		<div id='info'>
+			<p>Info</p>
+		</div>
+
+	<script src="http://cdn.leafletjs.com/leaflet-0.6.2/leaflet.js"></script>
+	 
+<script type="text/javascript">
+			 
+BRS = {};
+
+BRS.init = function() {
+	// define the bounds/extend of our area
+	var bounds = new L.LatLngBounds(new L.LatLng(49.56107, 6.06943), new L.LatLng(49.6554, 6.20316)), // sw corner, ne corner
+		osm_path = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+		osm_attribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+		osm = cloudmade = new L.TileLayer(osm_path, {minZoom: 12, attribution: osm_attribution});
+
+	// create the map
+	BRS.map = L.map('map', {
+		center: bounds.getCenter(),
+		zoom: 14,
+		layers: [osm],
+		maxBounds: bounds
+	})
+
+	BRS.popup = L.popup();
+
+	BRS.map.on('click', BRS.onMapClick);
+
+	BRS.get_list();
+};
+
+BRS.get_list = function() {
+
+	$.ajax({
+		url: "pinc/brs_list.php",
+		success: function( data ) {
+
+			// convert string to JSON object
+			jdata = jQuery.parseJSON(data);
+
+			// copy to global object
+			BRS.data = jdata;
+
+			// iterate through bike rack suggestion objects
+			for ( brs in jdata ) {
+				// overwrite index with object
+				brs = jdata[brs];
+				cmts = brs.voters;
+
+				// Build window components
+				cmts_string = '<b>Voters</b> and comments<br>';
+
+				// iterate through comments
+				for ( com in cmts ) {
+					// overwrite index with object
+					com = cmts[com];
+
+					// build string of comments
+					cmts_string += "<b>" + com.name + "</b> \"" + com.comment + "\"<br>\n";
+				}
+				cmts_string += '';
+
+				// build title
+				title = '<h3>1 vote';
+				if ( cmts.length > 1 ) {
+					title = '<h3>' + cmts.length + ' votes';
+				}
+				title += "<img onclick='BRS.voteUp(" + brs.lat + "," + brs.lng + ")' src='imgs/thumbup.png'></h3>\n";
+
+				// add the markers
+				var marker = L.marker([brs.lat, brs.lng]).bindPopup(title + cmts_string).addTo(BRS.map);
+			}
+		}
+	});
+};
+
+BRS.voteUp = function( lat, lng ) {
+	// close the popup
+	BRS.map.closePopup();
+
+	// open a new popup
+	BRS.showBRSForm( lat, lng );
+};
+
+BRS.suggestStation = function(lat, lng) {
+
+	// send data
+	$.ajax({
+		url: "pinc/brs_sub.php",
+		data: {
+			brs_name: $('#brsug_name').val(),
+			brs_comment: $('#brsug_com').val(),
+			brs_lat: lat,
+			brs_lng: lng
+		},
+		success: function( data ) {
+			if ( data == "Success!" ) {
+				var marker = L.marker([lat, lng]).bindPopup("Your new bike rack suggestions has been added!").addTo(BRS.map).openPopup();
+
+				BRS.get_list();
+			} else {
+				if ( data == "Please provide your name." ) {
+					$( "#warn" ).html( "<strong>" + data + "</strong>");
+				} else {
+					$( "#warn" ).html( "<strong>An unexpected error has occurred.</strong>");
+				}
+			}
+		}
+	});
+
+	// update suggestion markers
+};
+
+// redirect event to BRS.showBRSForm
+BRS.onMapClick = function(e) {
+	BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
+};
+
+// show form to vote/suggest for station
+BRS.showBRSForm = function( lat, lng ) {
+	new_BR_html = "<p><strong>Suggest a bike rack at this location</strong><br><span class='mint'>(" + lat + ", " + lng + ")</span></p><form><p>Your name: <input id='brsug_name' type='text'/></p><p>Comment: <input id='brsug_com' type='text'></p><p id='warn'></p><p><input type='button' value='Submit suggestion' onclick='BRS.suggestStation(" + lat + ", " + lng + ")'/></p></form>";
+
+	BRS.popup
+		.setLatLng( new L.LatLng( lat, lng) )
+		.setContent(new_BR_html)
+		.openOn(BRS.map);
+
+	$('#brsug_name').focus();
+};
+
+window.onload = BRS.init;
+
+</script>
+</body>
+</html>
+
