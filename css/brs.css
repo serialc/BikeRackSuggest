@@ -81,6 +81,26 @@ h3 img:active {
 	line-height: 2em;
 }
 
+#legend {
+	color: #666666;
+	float: right;
+	font-size: 0.5em;
+	line-height: 2.8em;
+	text-align: right;
+	text-decoration: none;
+	width: 100px;
+	margin-right: 30px;
+}
+
+#legend a {
+	text-decoration: none;
+	color: #666;
+}
+
+#legend a:hover {
+	text-decoration: underline;
+}
+
 /* form layout */
 form {
 	padding: 5px;
