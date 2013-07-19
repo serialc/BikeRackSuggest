@@ -12,7 +12,7 @@
 		<![endif]-->
 	</head>
 	<body>
-		<div id='head'>Suggest bike rack locations in Luxembourg City<span id='legend'><a href='http://www.opencyclemap.org/docs/'>Map legend</a></div>
+		<div id='head'>Suggest bike rack locations in Luxembourg City<span id='legend'><a href='http://www.opencyclemap.org/docs/'>OpenCycleMap legend</a></div>
 		<div id='cont'>
 			<div id="map"></div>
 		</div>
@@ -29,9 +29,9 @@ BRS = {};
 BRS.init = function() {
 	// define the bounds/extend of our area
 	var bounds = new L.LatLngBounds(new L.LatLng(49.56107, 6.06943), new L.LatLng(49.6554, 6.20316)), // sw corner, ne corner
-		//osm_path = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
-		//osm_attribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-		//osm = cloudmade = new L.TileLayer(osm_path, {minZoom: 12, attribution: osm_attribution});
+		osm_path = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+		osm_attribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+		osm = cloudmade = new L.TileLayer(osm_path, {minZoom: 12, attribution: osm_attribution});
 		ocm_path = 'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
 		ocm_attribution = '&copy <a href="http://www.opencyclemap.org/">OpenCycleMap</a>, map data &copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
 		ocm = new L.TileLayer(ocm_path, {minZoom: 12, attribution: ocm_attribution});
@@ -40,9 +40,16 @@ BRS.init = function() {
 	BRS.map = L.map('map', {
 		center: bounds.getCenter(),
 		zoom: 14,
-		layers: [ocm],
+		layers: [ocm, osm],
 		maxBounds: bounds
 	})
+
+	var baseMaps = {
+		"OpenCycleMap": ocm,
+		"OpenStreetMap": osm
+	};
+
+	L.control.layers(baseMaps).addTo(BRS.map);
 
 	BRS.popup = L.popup();
 

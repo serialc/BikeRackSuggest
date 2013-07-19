@@ -102,20 +102,20 @@ h3 img:active {
 }
 
 /* form layout */
-form {
+.leaflet-popup-content form {
 	padding: 5px;
 	height: 100px;
 }
 
-form p {
+.leaflet-popup-content form p {
 	line-height: 1.2em;
 	padding: 0px;
 }
-input {
+.leaflet-popup-content input {
 	left: 100px;
 	position: absolute;
 }
-input[type="button"] {
+.leaflet-popup-content input[type="button"] {
 	height: 30px;
 }
 
