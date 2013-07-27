@@ -145,9 +145,9 @@ BRS.get_list = function() {
 				brl = jdata['bike_rack_locations'][brl];
 
 				if ( brl['cov'] === '1' ) {
-					var marker = L.marker([brl.lat, brl.lng], {icon: greenIcon}).bindPopup('Bike Rack:' + brl['name'] + ' ' + brl['cov'] + ' ' + brl['cap']).addTo(BRS.map);
+					var marker = L.marker([brl.lat, brl.lng], {icon: greenIcon}).bindPopup('<h3>Covered Bike Rack</h3>Capacity: ' + brl['cap'] + '<br>Submitted by: ' + brl['name']).addTo(BRS.map);
 				} else {
-					var marker = L.marker([brl.lat, brl.lng], {icon: blueIcon}).bindPopup('Bike Rack:' + brl['name'] + ' ' + brl['cov'] + ' ' + brl['cap']).addTo(BRS.map);
+					var marker = L.marker([brl.lat, brl.lng], {icon: blueIcon}).bindPopup('<h3>Bike Rack</h3>Capacity: ' + brl['cap'] + '<br>Submitted by: ' + brl['name']).addTo(BRS.map);
 				}
 			}
 		}
