@@ -3,6 +3,7 @@ html, body, #cont {
 	padding: 0px;
 	margin: 0px;
 	height: 100%;
+	min-width: 450px;
 }
 
 /* major sections */
@@ -10,10 +11,10 @@ html, body, #cont {
 	position: absolute;
 	top: 0;
 	left: 0;
-	height: 40px;
-	font-size: 1.8em;
+	font-size: 1.2em;
 	padding: 12px 10px 8px 10px;
 	width: 100%;
+	min-width: 450px;
 	z-index: 2;
 	background-color: rgba(255, 255, 255, 0.7);
 	-moz-box-shadow: 10px 10px 5px #888;
@@ -37,6 +38,35 @@ html, body, #cont {
 	min-width: 200px;
 	height: 100%;
 	background-color: rgba(100,150,100,0.5);
+}
+
+#action_buttons {
+	font-size: 0.9em;
+	line-height: 2.8em;
+	margin: 0 15px;
+}
+
+span .acbut {
+	width: 170px;
+	white-space: nowrap;
+	text-align: center;
+	background-color: rgba(200, 200, 200, 0.5);
+	border: solid 1px rgba(0,0,0, 0.25);
+	margin: 0 5px;
+	padding: 5px;
+	cursor: pointer;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+span .acbut:hover {
+	background-color: rgba(255, 255, 255, 0.5);
+}
+span .button_active {
+	background-color: rgba(150, 150, 240, 0.5);
+}
+span .button_active:hover {
+	background-color: rgba(200, 200, 240, 0.5);
 }
 
 /* generic tags */
@@ -74,49 +104,38 @@ h3 img:active {
 	font-size: 0.8em;
 }
 
+.hips {
+	margin: 0 5px;
+}
+
 #warn {
 	background-color: #ffa;
-	margin-left: -5px;
+	margin: 0 0 2px -5px;
 	padding-left: 5px;
-	line-height: 2em;
-}
-
-#legend {
-	color: #666666;
-	float: right;
-	font-size: 0.5em;
-	line-height: 2.8em;
-	text-align: right;
-	text-decoration: none;
-	width: 100px;
-	margin-right: 30px;
-}
-
-#legend a {
-	text-decoration: none;
-	color: #666;
-}
-
-#legend a:hover {
-	text-decoration: underline;
+	line-height: 1.2em;
 }
 
 /* form layout */
 .leaflet-popup-content form {
 	padding: 5px;
 	height: 100px;
+	font-size: 1.1em;
 }
 
 .leaflet-popup-content form p {
-	line-height: 1.2em;
+	line-height: 1.4em;
 	padding: 0px;
 }
-.leaflet-popup-content input {
+.leaflet-popup-content .ialign {
 	left: 100px;
 	position: absolute;
 }
 .leaflet-popup-content input[type="button"] {
 	height: 30px;
+}
+
+.leaflet-popup-content #brloc_cap {
+	width: 20px;
 }
 
 /* leaflet over-ride */

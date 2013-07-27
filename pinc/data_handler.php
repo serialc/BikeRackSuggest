@@ -16,8 +16,8 @@ class datah {
 	}
 
 	# get all the suggestions
-	public function get_suggestions() {
-		return $this->suggs['bike_rack_suggestions'];
+	public function get_br_data() {
+		return $this->suggs;
 	}
 
 	# chack if a station at these coords already exists
@@ -53,6 +53,26 @@ class datah {
 		}
 
 		fclose($fh);
+	}
+
+	# add a bike rack location
+	public function add_bike_rack($new_brs) {
+
+		# prepare the new data
+		$brl_pckg = array(
+			"lat" => $new_brs['lat'],
+			"lng" => $new_brs['lng'],
+			"name" => $new_brs['name'],
+			"cov" => $new_brs['cov'],
+			"cap" => $new_brs['cap']
+		);
+
+		# update array and local variable, add the new suggestion to the list
+		array_push($this->suggs['bike_rack_locations'], $brl_pckg);
+
+		$this->update_data_list();
+
+		return true;
 	}
 
 	# add a bike rack suggestion

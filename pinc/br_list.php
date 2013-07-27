@@ -7,6 +7,6 @@ date_default_timezone_set('UTC');
 # load the class and object $dh
 include('data_handler.php');
 
-print(json_encode($dh->get_br_list()));
+print(json_encode($dh->get_br_data()));
 
 ?>

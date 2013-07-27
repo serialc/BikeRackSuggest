@@ -12,7 +12,7 @@
 		<![endif]-->
 	</head>
 	<body>
-		<div id='head'>Suggest bike rack locations in Luxembourg City<span id='legend'><a href='http://www.opencyclemap.org/docs/'>OpenCycleMap legend</a></div>
+		<div id='head'>Suggest bike rack locations in Luxembourg City <span id='action_buttons'><span class='acbut' id='acbut_suggest' onclick='BRS.set_mode("suggest");'>Suggest rack location</span><span class='acbut' id='acbut_location' onclick='BRS.set_mode("location");'>Place known rack</span></span></div>
 		<div id='cont'>
 			<div id="map"></div>
 		</div>
@@ -24,14 +24,14 @@
 	 
 <script type="text/javascript">
 			 
-BRS = {};
+BRS = {mode: 'map'};
 
 BRS.init = function() {
 	// define the bounds/extend of our area
 	var bounds = new L.LatLngBounds(new L.LatLng(49.56107, 6.06943), new L.LatLng(49.6554, 6.20316)), // sw corner, ne corner
 		osm_path = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
 		osm_attribution = '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-		osm = cloudmade = new L.TileLayer(osm_path, {minZoom: 12, attribution: osm_attribution});
+		osm = new L.TileLayer(osm_path, {minZoom: 12, attribution: osm_attribution});
 		ocm_path = 'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
 		ocm_attribution = '&copy <a href="http://www.opencyclemap.org/">OpenCycleMap</a>, map data &copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
 		ocm = new L.TileLayer(ocm_path, {minZoom: 12, attribution: ocm_attribution});
@@ -39,14 +39,14 @@ BRS.init = function() {
 	// create the map
 	BRS.map = L.map('map', {
 		center: bounds.getCenter(),
-		zoom: 14,
+		zoom: 12,
 		layers: [ocm, osm],
 		maxBounds: bounds
 	})
 
 	var baseMaps = {
-		"OpenCycleMap": ocm,
-		"OpenStreetMap": osm
+		"Open Cycle Map": ocm,
+		"Open Street Map": osm
 	};
 
 	L.control.layers(baseMaps).addTo(BRS.map);
@@ -58,11 +58,50 @@ BRS.init = function() {
 	BRS.get_list();
 };
 
+BRS.set_mode = function(m) {
+	// remove the active styling of both buttons
+	$('#acbut_suggest').removeClass('button_active');
+	$('#acbut_location').removeClass('button_active');
+
+	// if the user turned off the button, go back to map mode
+	if ( m === BRS.mode ) {
+		BRS.mode = 'map';
+		return;
+	}
+
+	// user turned on a button
+	BRS.mode = m;
+	$('#acbut_' + m).addClass('button_active');
+};
+
 BRS.get_list = function() {
 
 	$.ajax({
-		url: "pinc/brs_list.php",
+		url: "pinc/br_list.php",
 		success: function( data ) {
+
+			// prepare custom markers
+			var BRIcon = L.Icon.extend({
+				options: {
+					shadowUrl: 'imgs/brshadow.png',
+					shadowRetinaUrl: 'imgs/brshadow2x.png',
+					shadowSize:   [65, 63],
+					shadowAnchor: [16, 62],
+					iconSize:     [33, 63],
+					iconAnchor:   [16, 62],
+					popupAnchor:  [0, -50]
+				}
+			});
+
+			var greenIcon = new BRIcon({iconUrl: 'imgs/brmarker_green.png',
+					iconRetinaUrl: 'imgs/brmarker_green2x.png'}),
+				blackIcon = new BRIcon({iconUrl: 'imgs/brmarker_black.png',
+					iconRetinaUrl: 'imgs/brmarker_black2x.png'}),
+				blueIcon = new BRIcon({iconUrl: 'imgs/brmarker_blue.png',
+					iconRetinaUrl: 'imgs/brmarker_blue2x.png'}),
+				redIcon = new BRIcon({iconUrl: 'imgs/brmarker_red.png',
+					iconRetinaUrl: 'imgs/brmarker_red2x.png'});
+
 
 			// convert string to JSON object
 			jdata = jQuery.parseJSON(data);
@@ -71,9 +110,9 @@ BRS.get_list = function() {
 			BRS.data = jdata;
 
 			// iterate through bike rack suggestion objects
-			for ( brs in jdata ) {
+			for ( brs in jdata['bike_rack_suggestions'] ) {
 				// overwrite index with object
-				brs = jdata[brs];
+				brs = jdata['bike_rack_suggestions'][brs];
 				cmts = brs.voters;
 
 				// Build window components
@@ -97,7 +136,19 @@ BRS.get_list = function() {
 				title += "<img onclick='BRS.voteUp(" + brs.lat + "," + brs.lng + ")' src='imgs/thumbup.png'></h3>\n";
 
 				// add the markers
-				var marker = L.marker([brs.lat, brs.lng]).bindPopup(title + cmts_string).addTo(BRS.map);
+				var marker = L.marker([brs.lat, brs.lng], {icon: blackIcon}).bindPopup(title + cmts_string).addTo(BRS.map);
+			}
+
+			// itereate through bike rack locations
+			for ( brl in jdata['bike_rack_locations'] ) {
+				// overwrite index with object
+				brl = jdata['bike_rack_locations'][brl];
+
+				if ( brl['cov'] === '1' ) {
+					var marker = L.marker([brl.lat, brl.lng], {icon: greenIcon}).bindPopup('Bike Rack:' + brl['name'] + ' ' + brl['cov'] + ' ' + brl['cap']).addTo(BRS.map);
+				} else {
+					var marker = L.marker([brl.lat, brl.lng], {icon: blueIcon}).bindPopup('Bike Rack:' + brl['name'] + ' ' + brl['cov'] + ' ' + brl['cap']).addTo(BRS.map);
+				}
 			}
 		}
 	});
@@ -111,7 +162,7 @@ BRS.voteUp = function( lat, lng ) {
 	BRS.showBRSForm( lat, lng );
 };
 
-BRS.suggestStation = function(lat, lng) {
+BRS.suggestBikeRack = function(lat, lng) {
 
 	// send data
 	$.ajax({
@@ -136,18 +187,58 @@ BRS.suggestStation = function(lat, lng) {
 			}
 		}
 	});
+};
 
-	// update suggestion markers
+BRS.locateBikeRack = function(lat, lng) {
+
+	// send data
+	$.ajax({
+		url: "pinc/brl_sub.php",
+		data: {
+			brl_name: $('#brloc_name').val(),
+			brl_cover: $('input[name=brloc_cover]').val(),
+			brl_cap: $('#brloc_cap').val(),
+			brl_lat: lat,
+			brl_lng: lng
+		},
+		success: function( data ) {
+			if ( data == "Success!" ) {
+				var marker = L.marker([lat, lng]).bindPopup("Your bike rack location has been added!").addTo(BRS.map).openPopup();
+
+				BRS.get_list();
+			} else {
+				if ( data == "Please provide your name." ) {
+					$( "#warn" ).html( "<strong>" + data + "</strong>");
+				} else {
+					$( "#warn" ).html( "<strong>An unexpected error has occurred.</strong>");
+				}
+			}
+		}
+	});
 };
 
 // redirect event to BRS.showBRSForm
 BRS.onMapClick = function(e) {
-	BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
+	// submit a suggestion for a bike rack
+	if ( BRS.mode === 'suggest' ) {
+		BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
+	}
+
+	// submit a known/existing bike rack location
+	if ( BRS.mode === 'location' ) {
+		BRS.showBRLForm( e.latlng.lat, e.latlng.lng );
+	}
 };
 
 // show form to vote/suggest for station
 BRS.showBRSForm = function( lat, lng ) {
-	new_BR_html = "<p><strong>Suggest a bike rack at this location</strong><br><span class='mint'>(" + lat + ", " + lng + ")</span></p><form><p>Your name: <input id='brsug_name' type='text'/></p><p>Comment: <input id='brsug_com' type='text'></p><p id='warn'></p><p><input type='button' value='Submit suggestion' onclick='BRS.suggestStation(" + lat + ", " + lng + ")'/></p></form>";
+	new_BR_html = "<p><strong>Suggest a bike rack at this location</strong><br><span class='mint'>(" + lat + ", " + lng + ")</span></p>" +
+		"<form>" +
+		"<p>Your name: <input id='brsug_name' class='ialign' type='text'/></p>" +
+		"<p>Comment: <input id='brsug_com' class='ialign' type='text'></p>" +
+		"<p id='warn'></p>" +
+		"<p><input type='button' class='ialign' value='Submit suggestion' onclick='BRS.suggestBikeRack(" + lat + ", " + lng + ")'/></p>" +
+		"</form>";
 
 	BRS.popup
 		.setLatLng( new L.LatLng( lat, lng) )
@@ -155,6 +246,25 @@ BRS.showBRSForm = function( lat, lng ) {
 		.openOn(BRS.map);
 
 	$('#brsug_name').focus();
+};
+
+// show form to locate existing bike rack
+BRS.showBRLForm = function( lat, lng ) {
+	new_BR_html = "<p><strong>Submit a known existing bike share location</strong><br><span class='mint'>(" + lat + ", " + lng + ")</span></p>" +
+		"<form>" +
+		"<p>Your name: <input id='brloc_name' class='ialign' type='text'/></p>" +
+		"<p>Covered: <span class='hips'><input id='brloc_cover_yes' type='radio' name='brloc_cover' value='1'> <label for='brloc_cover_yes'>Yes</label> <input id='brloc_cover_no' type='radio' name='brloc_cover' value='0'> <label for='brloc_cover_no'>No</label></span> " +
+		"Capacity: <input id='brloc_cap' type='number' maxlength='2'/></p>" +
+		"<p id='warn'></p>" +
+		"<p><input type='button' class='ialign' value='Submit location' onclick='BRS.locateBikeRack(" + lat + ", " + lng + ")'/></p>" +
+		"</form>";
+
+	BRS.popup
+		.setLatLng( new L.LatLng( lat, lng) )
+		.setContent(new_BR_html)
+		.openOn(BRS.map);
+
+	$('#brloc_name').focus();
 };
 
 window.onload = BRS.init;
