@@ -12,7 +12,7 @@
 		<![endif]-->
 	</head>
 	<body>
-		<div id='head'>Suggest bike rack locations in Luxembourg City <span id='action_buttons'><span class='acbut' id='acbut_suggest' onclick='BRS.set_mode("suggest");'>Suggest rack location</span><span class='acbut' id='acbut_location' onclick='BRS.set_mode("location");'>Place known rack</span></span></div>
+		<div id='head'>Suggest bike rack locations in Luxembourg City <span id='action_buttons'><span class='acbut' id='acbut_suggest' onclick='BRS.set_mode("suggest");'>Suggest rack location</span></span></div>
 		<div id='cont'>
 			<div id="map"></div>
 		</div>
@@ -61,47 +61,47 @@ BRS.init = function() {
 BRS.set_mode = function(m) {
 	// remove the active styling of both buttons
 	$('#acbut_suggest').removeClass('button_active');
-	$('#acbut_location').removeClass('button_active');
 
 	// if the user turned off the button, go back to map mode
 	if ( m === BRS.mode ) {
 		BRS.mode = 'map';
+		$('#map').css('cursor', '');
 		return;
 	}
 
 	// user turned on a button
 	BRS.mode = m;
 	$('#acbut_' + m).addClass('button_active');
+	$('#map').css('cursor', 'crosshair');
 };
 
 BRS.get_list = function() {
 
+	// prepare custom markers
+	var BRIcon = L.Icon.extend({
+		options: {
+			shadowUrl: 'imgs/brshadow.png',
+			shadowRetinaUrl: 'imgs/brshadow2x.png',
+			shadowSize:   [65, 63],
+			shadowAnchor: [16, 62],
+			iconSize:     [33, 63],
+			iconAnchor:   [16, 62],
+			popupAnchor:  [0, -50]
+		}
+	});
+
+	var greenIcon = new BRIcon({iconUrl: 'imgs/brmarker_green.png',
+			iconRetinaUrl: 'imgs/brmarker_green2x.png'}),
+		blackIcon = new BRIcon({iconUrl: 'imgs/brmarker_black.png',
+			iconRetinaUrl: 'imgs/brmarker_black2x.png'}),
+		blueIcon = new BRIcon({iconUrl: 'imgs/brmarker_blue.png',
+			iconRetinaUrl: 'imgs/brmarker_blue2x.png'}),
+		redIcon = new BRIcon({iconUrl: 'imgs/brmarker_red.png',
+			iconRetinaUrl: 'imgs/brmarker_red2x.png'});
+
 	$.ajax({
 		url: "pinc/br_list.php",
 		success: function( data ) {
-
-			// prepare custom markers
-			var BRIcon = L.Icon.extend({
-				options: {
-					shadowUrl: 'imgs/brshadow.png',
-					shadowRetinaUrl: 'imgs/brshadow2x.png',
-					shadowSize:   [65, 63],
-					shadowAnchor: [16, 62],
-					iconSize:     [33, 63],
-					iconAnchor:   [16, 62],
-					popupAnchor:  [0, -50]
-				}
-			});
-
-			var greenIcon = new BRIcon({iconUrl: 'imgs/brmarker_green.png',
-					iconRetinaUrl: 'imgs/brmarker_green2x.png'}),
-				blackIcon = new BRIcon({iconUrl: 'imgs/brmarker_black.png',
-					iconRetinaUrl: 'imgs/brmarker_black2x.png'}),
-				blueIcon = new BRIcon({iconUrl: 'imgs/brmarker_blue.png',
-					iconRetinaUrl: 'imgs/brmarker_blue2x.png'}),
-				redIcon = new BRIcon({iconUrl: 'imgs/brmarker_red.png',
-					iconRetinaUrl: 'imgs/brmarker_red2x.png'});
-
 
 			// convert string to JSON object
 			jdata = jQuery.parseJSON(data);
@@ -155,6 +155,19 @@ BRS.get_list = function() {
 			}
 		}
 	});
+
+	$.getJSON("data/export.geojson", function( data ) {
+
+			L.geoJson(data, {
+				style: function (feature) {
+					return {color: feature.properties.color};
+				},
+				onEachFeature: function (feature, layer) {
+						layer.bindPopup(feature.properties.description);
+				}
+			}).addTo(BRS.map);
+		}
+	);
 };
 
 BRS.voteUp = function( lat, lng ) {
@@ -249,25 +262,6 @@ BRS.showBRSForm = function( lat, lng ) {
 		.openOn(BRS.map);
 
 	$('#brsug_name').focus();
-};
-
-// show form to locate existing bike rack
-BRS.showBRLForm = function( lat, lng ) {
-	new_BR_html = "<p><strong>Submit a known existing bike share location</strong><br><span class='mint'>(" + lat + ", " + lng + ")</span></p>" +
-		"<form>" +
-		"<p>Your name: <input id='brloc_name' class='ialign' type='text'/></p>" +
-		"<p>Covered: <span class='hips'><input id='brloc_cover_yes' type='radio' name='brloc_cover' value='1'> <label for='brloc_cover_yes'>Yes</label> <input id='brloc_cover_no' type='radio' name='brloc_cover' value='0'> <label for='brloc_cover_no'>No</label></span> " +
-		"Capacity: <input id='brloc_cap' type='number' maxlength='2'/></p>" +
-		"<p id='warn'></p>" +
-		"<p><input type='button' class='ialign' value='Submit location' onclick='BRS.locateBikeRack(" + lat + ", " + lng + ")'/></p>" +
-		"</form>";
-
-	BRS.popup
-		.setLatLng( new L.LatLng( lat, lng) )
-		.setContent(new_BR_html)
-		.openOn(BRS.map);
-
-	$('#brloc_name').focus();
 };
 
 window.onload = BRS.init;
