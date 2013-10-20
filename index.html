@@ -12,7 +12,8 @@
 		<![endif]-->
 	</head>
 	<body>
-		<div id='head'>Suggest bike rack locations in Luxembourg City <span id='action_buttons'><span class='acbut' id='acbut_suggest' onclick='BRS.set_mode("suggest");'>Suggest rack location</span></span></div>
+		<div id='head'>Suggest bike rack locations in Luxembourg City <span id='action_buttons'><span class='acbut' id='acbut_suggest' onclick='BRS.set_mode("suggest");'>Suggest rack location</span></span>
+		</div>
 		<div id='cont'>
 			<div id="map"></div>
 		</div>
@@ -78,7 +79,18 @@ BRS.set_mode = function(m) {
 BRS.get_list = function() {
 
 	// prepare custom markers
-	var BRIcon = L.Icon.extend({
+	var BRLIcon = L.Icon.extend({
+		options: {
+			iconSize:	[80, 48],
+			iconAnchor:	[40, 24],
+			popupAnchor:[0, -12]
+		}
+	});
+
+	var cbrIcon = new BRLIcon({iconUrl: 'imgs/cbike_s.png', iconRetinaUrl: 'imgs/cbike.png'}),
+		ubrIcon = new BRLIcon({iconUrl: 'imgs/ubike_s.png', iconRetinaUrl: 'imgs/ubike.png'});
+
+	var BRSIcon = L.Icon.extend({
 		options: {
 			shadowUrl: 'imgs/brshadow.png',
 			shadowRetinaUrl: 'imgs/brshadow2x.png',
@@ -90,15 +102,16 @@ BRS.get_list = function() {
 		}
 	});
 
-	var greenIcon = new BRIcon({iconUrl: 'imgs/brmarker_green.png',
+	var greenIcon = new BRSIcon({iconUrl: 'imgs/brmarker_green.png',
 			iconRetinaUrl: 'imgs/brmarker_green2x.png'}),
-		blackIcon = new BRIcon({iconUrl: 'imgs/brmarker_black.png',
+		blackIcon = new BRSIcon({iconUrl: 'imgs/brmarker_black.png',
 			iconRetinaUrl: 'imgs/brmarker_black2x.png'}),
-		blueIcon = new BRIcon({iconUrl: 'imgs/brmarker_blue.png',
+		blueIcon = new BRSIcon({iconUrl: 'imgs/brmarker_blue.png',
 			iconRetinaUrl: 'imgs/brmarker_blue2x.png'}),
-		redIcon = new BRIcon({iconUrl: 'imgs/brmarker_red.png',
+		redIcon = new BRSIcon({iconUrl: 'imgs/brmarker_red.png',
 			iconRetinaUrl: 'imgs/brmarker_red2x.png'});
 
+	// get list of suggested locations
 	$.ajax({
 		url: "pinc/br_list.php",
 		success: function( data ) {
@@ -136,38 +149,23 @@ BRS.get_list = function() {
 				title += "<img onclick='BRS.voteUp(" + brs.lat + "," + brs.lng + ")' src='imgs/thumbup.png'></h3>\n";
 
 				// add the markers
-				var marker = L.marker([brs.lat, brs.lng], {icon: blackIcon}).bindPopup(title + cmts_string).addTo(BRS.map);
-			}
-
-			// itereate through bike rack locations
-			for ( brl in jdata['bike_rack_locations'] ) {
-				// overwrite index with object
-				brl = jdata['bike_rack_locations'][brl];
-
-				// see if a capacity for the BR was given
-				capac = brl.cap ? brl.cap : 'unknown';
-
-				if ( brl['cov'] === '1' ) {
-					var marker = L.marker([brl.lat, brl.lng], {icon: greenIcon}).bindPopup('<h3>Covered Bike Rack</h3>Capacity: ' + capac + '<br>Submitted by: ' + brl['name']).addTo(BRS.map);
-				} else {
-					var marker = L.marker([brl.lat, brl.lng], {icon: blueIcon}).bindPopup('<h3>Bike Rack</h3>Capacity: ' + capac + '<br>Submitted by: ' + brl['name']).addTo(BRS.map);
-				}
+				var marker = L.marker([brs.lat, brs.lng], {icon: redIcon}).bindPopup(title + cmts_string).addTo(BRS.map);
 			}
 		}
 	});
 
-	$.getJSON("data/export.geojson", function( data ) {
-
-			L.geoJson(data, {
-				style: function (feature) {
-					return {color: feature.properties.color};
-				},
-				onEachFeature: function (feature, layer) {
-						layer.bindPopup(feature.properties.description);
-				}
-			}).addTo(BRS.map);
+	// get list of bike rack locations from OSM
+	$.getJSON("data/luxembourg_osm_bike_racks.json", function( data ) {
+		// Go through each bike rack
+		for( br in data['elements']) {
+			br = data['elements'][br];
+			if( br.tags.covered === 'yes' ) {
+				var marker = L.marker([br.lat, br.lon], {icon: cbrIcon}).bindPopup('<h3>Covered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
+			} else {
+				var marker = L.marker([br.lat, br.lon], {icon: ubrIcon}).bindPopup('<h3>Uncovered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
+			}
 		}
-	);
+	});
 };
 
 BRS.voteUp = function( lat, lng ) {
@@ -236,14 +234,7 @@ BRS.locateBikeRack = function(lat, lng) {
 // redirect event to BRS.showBRSForm
 BRS.onMapClick = function(e) {
 	// submit a suggestion for a bike rack
-	if ( BRS.mode === 'suggest' ) {
-		BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
-	}
-
-	// submit a known/existing bike rack location
-	if ( BRS.mode === 'location' ) {
-		BRS.showBRLForm( e.latlng.lat, e.latlng.lng );
-	}
+	BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
 };
 
 // show form to vote/suggest for station
