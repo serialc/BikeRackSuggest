@@ -79,37 +79,21 @@ BRS.set_mode = function(m) {
 BRS.get_list = function() {
 
 	// prepare custom markers
-	var BRLIcon = L.Icon.extend({
+	BRS.icon = {template: L.Icon.extend({
 		options: {
-			iconSize:	[80, 48],
-			iconAnchor:	[40, 24],
-			popupAnchor:[0, -12]
+			shadowUrl: 'imgs/brmarker_shadow.png',
+			shadowRetinaUrl: 'imgs/brmarker_shadow_hq.png',
+			shadowSize:   [50, 50],
+			shadowAnchor: [3, 47.5],
+			iconSize:	[25, 48],
+			iconAnchor:	[3, 47.5],
+			popupAnchor:[10, -20]
 		}
-	});
+	})};
 
-	var cbrIcon = new BRLIcon({iconUrl: 'imgs/cbike_s.png', iconRetinaUrl: 'imgs/cbike.png'}),
-		ubrIcon = new BRLIcon({iconUrl: 'imgs/ubike_s.png', iconRetinaUrl: 'imgs/ubike.png'});
-
-	var BRSIcon = L.Icon.extend({
-		options: {
-			shadowUrl: 'imgs/brshadow.png',
-			shadowRetinaUrl: 'imgs/brshadow2x.png',
-			shadowSize:   [65, 63],
-			shadowAnchor: [16, 62],
-			iconSize:     [33, 63],
-			iconAnchor:   [16, 62],
-			popupAnchor:  [0, -50]
-		}
-	});
-
-	var greenIcon = new BRSIcon({iconUrl: 'imgs/brmarker_green.png',
-			iconRetinaUrl: 'imgs/brmarker_green2x.png'}),
-		blackIcon = new BRSIcon({iconUrl: 'imgs/brmarker_black.png',
-			iconRetinaUrl: 'imgs/brmarker_black2x.png'}),
-		blueIcon = new BRSIcon({iconUrl: 'imgs/brmarker_blue.png',
-			iconRetinaUrl: 'imgs/brmarker_blue2x.png'}),
-		redIcon = new BRSIcon({iconUrl: 'imgs/brmarker_red.png',
-			iconRetinaUrl: 'imgs/brmarker_red2x.png'});
+	BRS.icon.cbr = new BRS.icon.template({iconUrl: 'imgs/brmarker_covered.png', iconRetinaUrl: 'imgs/brmarker_covered_hq.png'});
+	BRS.icon.ubr = new BRS.icon.template({iconUrl: 'imgs/brmarker_uncovered.png', iconRetinaUrl: 'imgs/brmarker_uncovered_hq.png'});
+	BRS.icon.sug = new BRS.icon.template({iconUrl: 'imgs/brmarker_suggested.png', iconRetinaUrl: 'imgs/brmarker_suggested_hq.png'});
 
 	// get list of suggested locations
 	$.ajax({
@@ -149,7 +133,7 @@ BRS.get_list = function() {
 				title += "<img onclick='BRS.voteUp(" + brs.lat + "," + brs.lng + ")' src='imgs/thumbup.png'></h3>\n";
 
 				// add the markers
-				var marker = L.marker([brs.lat, brs.lng], {icon: redIcon}).bindPopup(title + cmts_string).addTo(BRS.map);
+				var marker = L.marker([brs.lat, brs.lng], {icon: BRS.icon.sug}).bindPopup(title + cmts_string).addTo(BRS.map);
 			}
 		}
 	});
@@ -160,9 +144,9 @@ BRS.get_list = function() {
 		for( br in data['elements']) {
 			br = data['elements'][br];
 			if( br.tags.covered === 'yes' ) {
-				var marker = L.marker([br.lat, br.lon], {icon: cbrIcon}).bindPopup('<h3>Covered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
+				var marker = L.marker([br.lat, br.lon], {icon: BRS.icon.cbr}).bindPopup('<h3>Covered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
 			} else {
-				var marker = L.marker([br.lat, br.lon], {icon: ubrIcon}).bindPopup('<h3>Uncovered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
+				var marker = L.marker([br.lat, br.lon], {icon: BRS.icon.ubr}).bindPopup('<h3>Uncovered bike rack</h3>Capacity: ' + br.tags.capacity).addTo(BRS.map);
 			}
 		}
 	});
@@ -189,7 +173,7 @@ BRS.suggestBikeRack = function(lat, lng) {
 		},
 		success: function( data ) {
 			if ( data == "Success!" ) {
-				var marker = L.marker([lat, lng]).bindPopup("Your new bike rack suggestions has been added!").addTo(BRS.map).openPopup();
+			var marker = L.marker([lat, lng], {icon: BRS.icon.sug}).bindPopup("Your new bike rack suggestions has been added!").addTo(BRS.map).openPopup();
 
 				BRS.get_list();
 			} else {
@@ -233,6 +217,10 @@ BRS.locateBikeRack = function(lat, lng) {
 
 // redirect event to BRS.showBRSForm
 BRS.onMapClick = function(e) {
+	if ( BRS.mode != 'suggest' ) {
+		return;
+	}
+
 	// submit a suggestion for a bike rack
 	BRS.showBRSForm( e.latlng.lat, e.latlng.lng );
 };
